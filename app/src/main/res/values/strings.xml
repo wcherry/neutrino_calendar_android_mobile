@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Calendar</string>
+    <string name="channel_reminders">Reminders</string>
+    <string name="channel_arrivals">Arrival alerts</string>
+    <string name="channel_next_event">Next event</string>
+    <string name="widget_up_next">Up next</string>
+    <string name="widget_today">Today</string>
+    <string name="widget_month">Month</string>
+    <string name="shortcut_new_event">New event</string>
+    <string name="shortcut_new_task">New task</string>
+    <string name="shortcut_new_reminder">New reminder</string>
+    <string name="shortcut_today">Today</string>
+</resources>

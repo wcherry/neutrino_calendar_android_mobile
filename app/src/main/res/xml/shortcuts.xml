@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Long-press the icon: the iOS app's App Shortcuts, as launcher shortcuts. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut android:shortcutId="new_event" android:enabled="true" android:icon="@drawable/ic_shortcut_event"
+        android:shortcutShortLabel="@string/shortcut_new_event">
+        <intent android:action="android.intent.action.VIEW" android:data="neutrinocalendar://new/event"
+            android:targetPackage="com.neutrino.calendar" android:targetClass="com.neutrino.calendar.MainActivity" />
+    </shortcut>
+    <shortcut android:shortcutId="new_task" android:enabled="true" android:icon="@drawable/ic_shortcut_task"
+        android:shortcutShortLabel="@string/shortcut_new_task">
+        <intent android:action="android.intent.action.VIEW" android:data="neutrinocalendar://new/task"
+            android:targetPackage="com.neutrino.calendar" android:targetClass="com.neutrino.calendar.MainActivity" />
+    </shortcut>
+    <shortcut android:shortcutId="new_reminder" android:enabled="true" android:icon="@drawable/ic_shortcut_reminder"
+        android:shortcutShortLabel="@string/shortcut_new_reminder">
+        <intent android:action="android.intent.action.VIEW" android:data="neutrinocalendar://new/reminder"
+            android:targetPackage="com.neutrino.calendar" android:targetClass="com.neutrino.calendar.MainActivity" />
+    </shortcut>
+</shortcuts>
