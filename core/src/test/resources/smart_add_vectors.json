@@ -1,0 +1,662 @@
+{
+  "description": "RTM-style Smart Add, parsed identically by the web (smartAdd.ts) and the iOS Calendar app (SmartAdd.swift). Each case lists only the fields that differ from an empty parse; a case with no title keeps the input as its title. 'now' is a Friday.",
+  "context": {
+    "today": "2026-09-25",
+    "now": "14:00"
+  },
+  "cases": [
+    {
+      "input": "Buy milk",
+      "expect": {}
+    },
+    {
+      "input": "Buy milk ^tomorrow",
+      "expect": {
+        "title": "Buy milk",
+        "due": {
+          "date": "2026-09-26",
+          "time": null
+        }
+      }
+    },
+    {
+      "input": "Buy milk ^tomorrow 5pm !1 #errands *weekly =15min ~today @Safeway // semi-skimmed",
+      "expect": {
+        "title": "Buy milk",
+        "due": {
+          "date": "2026-09-26",
+          "time": "17:00"
+        },
+        "start": {
+          "date": "2026-09-25",
+          "time": null
+        },
+        "priority": 1,
+        "tags": [
+          "errands"
+        ],
+        "recurrenceRule": "FREQ=WEEKLY",
+        "estimateMinutes": 15,
+        "location": "Safeway",
+        "note": "semi-skimmed"
+      }
+    },
+    {
+      "input": "^ tomorrow buy bread",
+      "expect": {
+        "title": "buy bread",
+        "due": {
+          "date": "2026-09-26",
+          "time": null
+        }
+      }
+    },
+    {
+      "input": "Trailing punctuation ^tomorrow, then more",
+      "expect": {
+        "title": "Trailing punctuation then more",
+        "due": {
+          "date": "2026-09-26",
+          "time": null
+        }
+      }
+    },
+    {
+      "input": "Meeting tomorrow 3pm ^monday",
+      "expect": {
+        "title": "Meeting tomorrow 3pm",
+        "due": {
+          "date": "2026-09-28",
+          "time": null
+        }
+      }
+    },
+    {
+      "input": "Thing ^feb 30",
+      "expect": {
+        "title": "Thing ^feb 30"
+      }
+    },
+    {
+      "input": "Report ^next monday",
+      "expect": {
+        "title": "Report",
+        "due": {
+          "date": "2026-09-28",
+          "time": null
+        }
+      }
+    },
+    {
+      "input": "Report ^next friday",
+      "expect": {
+        "title": "Report",
+        "due": {
+          "date": "2026-10-02",
+          "time": null
+        }
+      }
+    },
+    {
+      "input": "Clean garage ^this sat",
+      "expect": {
+        "title": "Clean garage",
+        "due": {
+          "date": "2026-09-26",
+          "time": null
+        }
+      }
+    },
+    {
+      "input": "Submit ^next week",
+      "expect": {
+        "title": "Submit",
+        "due": {
+          "date": "2026-10-02",
+          "time": null
+        }
+      }
+    },
+    {
+      "input": "Renew ^next month",
+      "expect": {
+        "title": "Renew",
+        "due": {
+          "date": "2026-10-25",
+          "time": null
+        }
+      }
+    },
+    {
+      "input": "Dentist ^oct 3 10:30am",
+      "expect": {
+        "title": "Dentist",
+        "due": {
+          "date": "2026-10-03",
+          "time": "10:30"
+        }
+      }
+    },
+    {
+      "input": "Dentist ^3rd of october",
+      "expect": {
+        "title": "Dentist",
+        "due": {
+          "date": "2026-10-03",
+          "time": null
+        }
+      }
+    },
+    {
+      "input": "Taxes ^apr 15",
+      "expect": {
+        "title": "Taxes",
+        "due": {
+          "date": "2027-04-15",
+          "time": null
+        }
+      }
+    },
+    {
+      "input": "Book flights ^in 2 weeks",
+      "expect": {
+        "title": "Book flights",
+        "due": {
+          "date": "2026-10-09",
+          "time": null
+        }
+      }
+    },
+    {
+      "input": "Ping ^in 3 hours",
+      "expect": {
+        "title": "Ping",
+        "due": {
+          "date": "2026-09-25",
+          "time": "17:00"
+        }
+      }
+    },
+    {
+      "input": "Invoice ^eom",
+      "expect": {
+        "title": "Invoice",
+        "due": {
+          "date": "2026-09-30",
+          "time": null
+        }
+      }
+    },
+    {
+      "input": "Invoice ^end of the month",
+      "expect": {
+        "title": "Invoice",
+        "due": {
+          "date": "2026-09-30",
+          "time": null
+        }
+      }
+    },
+    {
+      "input": "Pay ^the 1st",
+      "expect": {
+        "title": "Pay",
+        "due": {
+          "date": "2026-10-01",
+          "time": null
+        }
+      }
+    },
+    {
+      "input": "Pay ^15th",
+      "expect": {
+        "title": "Pay",
+        "due": {
+          "date": "2026-10-15",
+          "time": null
+        }
+      }
+    },
+    {
+      "input": "Party ^2026-12-31 8pm",
+      "expect": {
+        "title": "Party",
+        "due": {
+          "date": "2026-12-31",
+          "time": "20:00"
+        }
+      }
+    },
+    {
+      "input": "Pick up ^10/3",
+      "expect": {
+        "title": "Pick up",
+        "due": {
+          "date": "2026-10-03",
+          "time": null
+        }
+      }
+    },
+    {
+      "input": "Ship ^15:00 tomorrow",
+      "expect": {
+        "title": "Ship",
+        "due": {
+          "date": "2026-09-26",
+          "time": "15:00"
+        }
+      }
+    },
+    {
+      "input": "Trip ~oct 1 ^oct 5",
+      "expect": {
+        "title": "Trip",
+        "start": {
+          "date": "2026-10-01",
+          "time": null
+        },
+        "due": {
+          "date": "2026-10-05",
+          "time": null
+        }
+      }
+    },
+    {
+      "input": "Call mom tomorrow at 3pm",
+      "expect": {
+        "title": "Call mom",
+        "due": {
+          "date": "2026-09-26",
+          "time": "15:00"
+        }
+      }
+    },
+    {
+      "input": "Pay rent by friday",
+      "expect": {
+        "title": "Pay rent",
+        "due": {
+          "date": "2026-09-25",
+          "time": null
+        }
+      }
+    },
+    {
+      "input": "Pay rent by fri",
+      "expect": {
+        "title": "Pay rent",
+        "due": {
+          "date": "2026-09-25",
+          "time": null
+        }
+      }
+    },
+    {
+      "input": "Call dentist on sat",
+      "expect": {
+        "title": "Call dentist",
+        "due": {
+          "date": "2026-09-26",
+          "time": null
+        }
+      }
+    },
+    {
+      "input": "Call Tom at 3pm",
+      "expect": {
+        "title": "Call Tom",
+        "due": {
+          "date": "2026-09-25",
+          "time": "15:00"
+        }
+      }
+    },
+    {
+      "input": "Standup 9am",
+      "expect": {
+        "title": "Standup",
+        "due": {
+          "date": "2026-09-26",
+          "time": "09:00"
+        }
+      }
+    },
+    {
+      "input": "Wake 3:30 am",
+      "expect": {
+        "title": "Wake",
+        "due": {
+          "date": "2026-09-26",
+          "time": "03:30"
+        }
+      }
+    },
+    {
+      "input": "Call at noon",
+      "expect": {
+        "title": "Call",
+        "due": {
+          "date": "2026-09-26",
+          "time": "12:00"
+        }
+      }
+    },
+    {
+      "input": "Ping in 90 minutes",
+      "expect": {
+        "title": "Ping",
+        "due": {
+          "date": "2026-09-25",
+          "time": "15:30"
+        }
+      }
+    },
+    {
+      "input": "Launch day after tomorrow",
+      "expect": {
+        "title": "Launch",
+        "due": {
+          "date": "2026-09-27",
+          "time": null
+        }
+      }
+    },
+    {
+      "input": "Dinner tonight",
+      "expect": {
+        "title": "Dinner",
+        "due": {
+          "date": "2026-09-25",
+          "time": null
+        }
+      }
+    },
+    {
+      "input": "Monday meeting prep",
+      "expect": {
+        "title": "meeting prep",
+        "due": {
+          "date": "2026-09-28",
+          "time": null
+        }
+      }
+    },
+    {
+      "input": "Friday 3pm call",
+      "expect": {
+        "title": "call",
+        "due": {
+          "date": "2026-09-25",
+          "time": "15:00"
+        }
+      }
+    },
+    {
+      "input": "Dentist october 3rd",
+      "expect": {
+        "title": "Dentist",
+        "due": {
+          "date": "2026-10-03",
+          "time": null
+        }
+      }
+    },
+    {
+      "input": "Mix 1/2 cup flour",
+      "expect": {}
+    },
+    {
+      "input": "Read \"Tomorrow Never Dies\"",
+      "expect": {}
+    },
+    {
+      "input": "Sat down with Tom",
+      "expect": {}
+    },
+    {
+      "input": "Lunch noon",
+      "expect": {}
+    },
+    {
+      "input": "Buy 3 apples",
+      "expect": {}
+    },
+    {
+      "input": "Stand by me",
+      "expect": {}
+    },
+    {
+      "input": "Water plants *every mon and thu",
+      "expect": {
+        "title": "Water plants",
+        "recurrenceRule": "FREQ=WEEKLY;BYDAY=MO,TH",
+        "due": {
+          "date": "2026-09-28",
+          "time": null
+        }
+      }
+    },
+    {
+      "input": "Water plants *every thu,mon",
+      "expect": {
+        "title": "Water plants",
+        "recurrenceRule": "FREQ=WEEKLY;BYDAY=MO,TH",
+        "due": {
+          "date": "2026-09-28",
+          "time": null
+        }
+      }
+    },
+    {
+      "input": "Gym *every other week",
+      "expect": {
+        "title": "Gym",
+        "recurrenceRule": "FREQ=WEEKLY;INTERVAL=2",
+        "due": {
+          "date": "2026-09-25",
+          "time": null
+        }
+      }
+    },
+    {
+      "input": "Gym *every other tuesday",
+      "expect": {
+        "title": "Gym",
+        "recurrenceRule": "FREQ=WEEKLY;INTERVAL=2;BYDAY=TU",
+        "due": {
+          "date": "2026-09-29",
+          "time": null
+        }
+      }
+    },
+    {
+      "input": "Haircut *after 6 weeks",
+      "expect": {
+        "title": "Haircut",
+        "recurrenceRule": "FREQ=WEEKLY;INTERVAL=6",
+        "repeatAfterCompletion": true,
+        "due": {
+          "date": "2026-09-25",
+          "time": null
+        }
+      }
+    },
+    {
+      "input": "Clean *after a month",
+      "expect": {
+        "title": "Clean",
+        "recurrenceRule": "FREQ=MONTHLY",
+        "repeatAfterCompletion": true,
+        "due": {
+          "date": "2026-09-25",
+          "time": null
+        }
+      }
+    },
+    {
+      "input": "Standup *every weekday ^mon 9am",
+      "expect": {
+        "title": "Standup",
+        "recurrenceRule": "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR",
+        "due": {
+          "date": "2026-09-28",
+          "time": "09:00"
+        }
+      }
+    },
+    {
+      "input": "Pills *daily for 5 times",
+      "expect": {
+        "title": "Pills",
+        "recurrenceRule": "FREQ=DAILY;COUNT=5",
+        "due": {
+          "date": "2026-09-25",
+          "time": null
+        }
+      }
+    },
+    {
+      "input": "Review *every 3 months",
+      "expect": {
+        "title": "Review",
+        "recurrenceRule": "FREQ=MONTHLY;INTERVAL=3",
+        "due": {
+          "date": "2026-09-25",
+          "time": null
+        }
+      }
+    },
+    {
+      "input": "Sync *biweekly",
+      "expect": {
+        "title": "Sync",
+        "recurrenceRule": "FREQ=WEEKLY;INTERVAL=2",
+        "due": {
+          "date": "2026-09-25",
+          "time": null
+        }
+      }
+    },
+    {
+      "input": "Brunch *every weekend",
+      "expect": {
+        "title": "Brunch",
+        "recurrenceRule": "FREQ=WEEKLY;BYDAY=SA,SU",
+        "due": {
+          "date": "2026-09-26",
+          "time": null
+        }
+      }
+    },
+    {
+      "input": "Thing *hourly",
+      "expect": {
+        "title": "Thing *hourly"
+      }
+    },
+    {
+      "input": "Long task =1h30m",
+      "expect": {
+        "title": "Long task",
+        "estimateMinutes": 90
+      }
+    },
+    {
+      "input": "Long task =2 hours",
+      "expect": {
+        "title": "Long task",
+        "estimateMinutes": 120
+      }
+    },
+    {
+      "input": "Long task =1.5h",
+      "expect": {
+        "title": "Long task",
+        "estimateMinutes": 90
+      }
+    },
+    {
+      "input": "Short task =45 min",
+      "expect": {
+        "title": "Short task",
+        "estimateMinutes": 45
+      }
+    },
+    {
+      "input": "No unit =15",
+      "expect": {
+        "title": "No unit =15"
+      }
+    },
+    {
+      "input": "Ticket #123 fix",
+      "expect": {}
+    },
+    {
+      "input": "Tags #Work #work #home",
+      "expect": {
+        "title": "Tags",
+        "tags": [
+          "work",
+          "home"
+        ]
+      }
+    },
+    {
+      "input": "Email bob@example.com",
+      "expect": {}
+    },
+    {
+      "input": "Wow! That !1 thing",
+      "expect": {
+        "title": "Wow! That thing",
+        "priority": 1
+      }
+    },
+    {
+      "input": "Low !3",
+      "expect": {
+        "title": "Low",
+        "priority": 3
+      }
+    },
+    {
+      "input": "Not a priority !4",
+      "expect": {}
+    },
+    {
+      "input": "See https://example.com/path now",
+      "expect": {}
+    },
+    {
+      "input": "Note only // with // slashes",
+      "expect": {
+        "title": "Note only",
+        "note": "with // slashes"
+      }
+    },
+    {
+      "input": "Shop @Whole_Foods",
+      "expect": {
+        "title": "Shop",
+        "location": "Whole_Foods"
+      }
+    },
+    {
+      "input": "Fix constructor bug ^toString",
+      "expect": {
+        "title": "Fix constructor bug ^toString"
+      }
+    },
+    {
+      "input": "Refactor *constructor =valueOf",
+      "expect": {
+        "title": "Refactor *constructor =valueOf"
+      }
+    },
+    {
+      "input": "Read hasOwnProperty docs on constructor",
+      "expect": {}
+    }
+  ]
+}
