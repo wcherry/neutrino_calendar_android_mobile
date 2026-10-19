@@ -1,9 +1,6 @@
 package com.neutrino.calendar
 
 import android.content.Context
-import android.net.ConnectivityManager
-import android.net.Network
-import android.net.NetworkCapabilities
 import com.neutrino.calendar.core.api.CalendarApi
 import com.neutrino.calendar.core.logic.HolidayEngine
 import com.neutrino.calendar.core.service.AttachmentFiles
@@ -19,12 +16,14 @@ import com.neutrino.calendar.geofence.GeofenceMonitor
 import com.neutrino.calendar.notifications.ReminderAlarms
 import com.neutrino.calendar.surfaces.SystemSurfaces
 import com.neutrino.shared.android.NeutrinoAccount
+import com.neutrino.shared.android.net.NetworkMonitor
 import com.neutrino.shared.core.api.NeutrinoApps
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.drop
@@ -74,7 +73,8 @@ class AppGraph(context: Context) {
 
     /** Set when there is something to remind about and the notification permission was never asked: the screen asks. */
     val wantsNotificationPermission = MutableStateFlow(false)
-    val isOnline = MutableStateFlow(true)
+    val network = NetworkMonitor(this.context)
+    val isOnline: StateFlow<Boolean> = network.isOnline
 
     init {
         alarms.isHidden = { r -> r.linkedEventId?.let(events::isInHiddenCalendar) ?: false }
@@ -125,29 +125,10 @@ class AppGraph(context: Context) {
             router.reset()
             scope.launch { surfaces.signOut() }
         }
-        watchNetwork()
-    }
-
-    private fun watchNetwork() {
-        val manager = context.getSystemService(ConnectivityManager::class.java)
-        runCatching {
-            manager.registerDefaultNetworkCallback(object : ConnectivityManager.NetworkCallback() {
-                override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) {
-                    val online = caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-                    scope.launch { setOnline(online) }
-                }
-
-                override fun onLost(network: Network) {
-                    scope.launch { setOnline(false) }
-                }
-            })
-        }
-    }
-
-    private fun setOnline(online: Boolean) {
-        if (isOnline.value == online) return
-        isOnline.value = online
-        // Replays queued writes whenever the network comes back.
-        if (account.auth.isSignedIn) sync.networkChanged(online)
+        // Replays queued writes whenever the network comes back. StateFlow already drops repeats.
+        network.start()
+        isOnline.drop(1).onEach { online ->
+            if (account.auth.isSignedIn) sync.networkChanged(online)
+        }.launchIn(scope)
     }
 }

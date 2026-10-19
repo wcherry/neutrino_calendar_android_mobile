@@ -58,7 +58,10 @@ import com.neutrino.calendar.ui.settings.SettingsScreen
 import com.neutrino.calendar.ui.tasks.TaskDetailScreen
 import com.neutrino.calendar.ui.tasks.TasksScreen
 import com.neutrino.shared.android.security.AppLock
+import com.neutrino.shared.android.ui.ConnectivityBanner
 import com.neutrino.shared.android.ui.LockScreen
+import com.neutrino.shared.core.sync.SyncActivity
+import kotlinx.coroutines.launch
 import com.neutrino.shared.android.ui.auth.LoginScreen
 import com.neutrino.shared.android.ui.auth.RegisterScreen
 import com.neutrino.shared.android.ui.keys.EncryptionSetupScreen
@@ -141,6 +144,7 @@ private fun Home(graph: AppGraph) {
         },
     ) { padding ->
         Column(Modifier.padding(padding).consumeWindowInsets(padding).fillMaxSize()) {
+            Connectivity(graph)
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 val route = router.current
                 if (route == null) TabRoot(router.tab) else RouteContent(route)
@@ -196,10 +200,29 @@ private fun KeyFlow(onBack: () -> Unit, content: @Composable (onDone: () -> Unit
     }
 }
 
-/** "2 changes waiting to sync", a refused offline change, and the source filter hiding calendars. */
+/** Offline, the queue of changes made offline, syncing, a failed replay with Retry, and "Back online". */
+@Composable
+private fun Connectivity(graph: AppGraph) {
+    val online by graph.isOnline.collectAsState()
+    val writes by graph.pending.writes.collectAsState()
+    val replaying by graph.pending.isReplaying.collectAsState()
+    val failure by graph.pending.lastFailure.collectAsState()
+    val activity = when {
+        replaying -> SyncActivity.Syncing(writes.size)
+        failure != null && writes.isNotEmpty() -> SyncActivity.Failed(failure.orEmpty())
+        else -> SyncActivity.Idle
+    }
+    ConnectivityBanner(
+        isOnline = online,
+        pendingChanges = writes.size,
+        activity = activity,
+        onRetry = { graph.scope.launch { graph.sync.catchUp() } },
+    )
+}
+
+/** A refused offline change, and the source filter hiding calendars. The queue is [Connectivity]'s. */
 @Composable
 private fun Banners(graph: AppGraph, tab: Tab) {
-    val writes by graph.pending.writes.collectAsState()
     val notice by graph.pending.notice.collectAsState()
     val filter by graph.prefs.sourceFilter.collectAsState()
     val bar = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceContainer).padding(horizontal = 16.dp, vertical = 6.dp)
@@ -211,11 +234,5 @@ private fun Banners(graph: AppGraph, tab: Tab) {
             Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
             IconButton(onClick = { graph.pending.dismissNotice() }) { Icon(Icons.Filled.Close, "Dismiss") }
         }
-    }
-    if (writes.isNotEmpty() && tab != Tab.SETTINGS) {
-        Text(
-            if (writes.size == 1) "1 change waiting to sync" else "${writes.size} changes waiting to sync",
-            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = bar,
-        )
     }
 }
