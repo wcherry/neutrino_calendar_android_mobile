@@ -51,7 +51,17 @@ class PendingWrites(private val file: File?) {
     private val _notice = MutableStateFlow<String?>(null)
     val notice: StateFlow<String?> = _notice
     private var rejected = 0
-    private var isReplaying = false
+
+    private val _isReplaying = MutableStateFlow(false)
+    /** True while [replay] is sending, for the connectivity banner's "Syncing…". */
+    val isReplaying: StateFlow<Boolean> = _isReplaying
+
+    private val _lastFailure = MutableStateFlow<String?>(null)
+    /**
+     * Why the last replay stopped with writes still queued — a server error, or a request that never
+     * got an answer. Cleared when a replay starts.
+     */
+    val lastFailure: StateFlow<String?> = _lastFailure
 
     val isEmpty: Boolean get() = _writes.value.isEmpty()
 
@@ -66,6 +76,7 @@ class PendingWrites(private val file: File?) {
     /** Forgets every queued write, for sign-out: the next account must not send this one's edits. */
     fun clear() {
         _writes.value = emptyList()
+        _lastFailure.value = null
         dismissNotice()
         save()
     }
@@ -80,8 +91,9 @@ class PendingWrites(private val file: File?) {
      * how many were done with, sent or dropped, so the caller knows whether to reload.
      */
     suspend fun replay(api: CalendarApi): Int {
-        if (isReplaying) return 0
-        isReplaying = true
+        if (_isReplaying.value) return 0
+        _isReplaying.value = true
+        _lastFailure.value = null
         var finished = 0
         try {
             while (true) {
@@ -89,7 +101,11 @@ class PendingWrites(private val file: File?) {
                 try {
                     api.replay(write.method, write.path, write.body)
                 } catch (e: Exception) {
-                    if (e.isNetwork || e is ApiException.NotSignedIn || e is ApiException.SessionExpired) break
+                    if (e.isNetwork) {
+                        _lastFailure.value = "The server couldn't be reached."
+                        break
+                    }
+                    if (e is ApiException.NotSignedIn || e is ApiException.SessionExpired) break
                     val status = e.httpStatus
                     if (status != null && status >= 500) {
                         if (_writes.value.firstOrNull()?.id != write.id) break
@@ -97,7 +113,10 @@ class PendingWrites(private val file: File?) {
                         _writes.value = listOf(bumped) + _writes.value.drop(1)
                         save()
                         // One bad write can't hold up every one queued behind it for ever.
-                        if (bumped.attempts < MAX_ATTEMPTS) break
+                        if (bumped.attempts < MAX_ATTEMPTS) {
+                            _lastFailure.value = "Server error ($status)."
+                            break
+                        }
                     }
                     // A 404 means it was deleted elsewhere; any other 4xx is a write the server will
                     // never take. A 403 is an event whose calendar is read-only now: say so.
@@ -110,7 +129,7 @@ class PendingWrites(private val file: File?) {
                 finished++
             }
         } finally {
-            isReplaying = false
+            _isReplaying.value = false
         }
         return finished
     }
