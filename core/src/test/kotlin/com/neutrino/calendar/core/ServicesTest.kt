@@ -24,6 +24,7 @@ import com.neutrino.calendar.core.sync.PendingWrites
 import com.neutrino.shared.core.crypto.Sodium
 import com.neutrino.shared.core.keys.Keyring
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.After
@@ -299,6 +300,24 @@ class ServicesTest {
         assertFalse("read from disk with no network", CalendarsService(api, cache).calendars.value.single().visible)
         calendars.reset()
         assertFalse(cache.exists())
+    }
+
+    @Test
+    fun syncedCalendarsAreListedApartAndRecolouredLikeAnyOther() = runBlocking {
+        server.calendars["cal-google"] = JsonObject(mapOf(
+            "id" to JsonPrimitive("cal-google"), "name" to JsonPrimitive("Google Calendar"), "color" to JsonPrimitive("#16a34a"),
+            "visible" to JsonPrimitive(true), "readOnly" to JsonPrimitive(false), "kind" to JsonPrimitive("connection"),
+            "isDefault" to JsonPrimitive(false), "source" to JsonPrimitive("google"),
+        ))
+        val calendars = CalendarsService(api, File(tmp, "calendars.json"))
+        calendars.reload()
+        assertEquals(listOf("cal-default"), calendars.ownCalendars.map { it.id })
+        assertEquals(listOf("cal-google"), calendars.syncedCalendars.map { it.id })
+
+        val google = calendars.calendar("cal-google")!!
+        calendars.update(google, google.copy(color = "#8b5cf6"))
+        assertEquals("#8b5cf6", server.calendars["cal-google"]!!["color"]!!.jsonPrimitive.content)
+        assertEquals("#8b5cf6", calendars.calendar("cal-google")!!.color)
     }
 
     @Test

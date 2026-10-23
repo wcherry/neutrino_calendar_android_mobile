@@ -192,7 +192,15 @@ fun SettingsScreen() {
                 }
             }
 
-            FormSection("Connected Calendars") {
+            FormSection("Connected Calendars", footer = "Synced events are drawn in their calendar's colour. Tap one to change it.".takeIf { calendars.any { it.kind == CalendarKind.CONNECTION } }) {
+                calendars.filter { it.kind == CalendarKind.CONNECTION }.forEach { c ->
+                    FormRow(onClick = { router.push(Route.EditCalendar(c.id)) }) {
+                        ColorDot(hexColor(c.color) ?: MaterialTheme.colorScheme.primary, 12)
+                        Spacer(Modifier.width(10.dp))
+                        Text(c.name, Modifier.weight(1f))
+                        Text("Colour", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
                 FormRow(divider = false) {
                     Text("Connect Google, Outlook or iCloud from the web app for now.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
@@ -281,7 +289,10 @@ fun CalendarFilterScreen(onBack: () -> Unit) {
 
 // ── Calendars ───────────────────────────────────────────────────────────────────────────────────
 
-/** Settings › Calendars: every calendar, shown or hidden at a tap, and holiday calendars by country. */
+/**
+ * Settings › Calendars: every calendar, shown or hidden at a tap, the calendars connected accounts
+ * sync into, and holiday calendars by country.
+ */
 @Composable
 fun CalendarsScreen(onBack: () -> Unit) {
     val graph = LocalContext.current.graph
@@ -299,10 +310,16 @@ fun CalendarsScreen(onBack: () -> Unit) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
             ErrorText(error)
             FormSection("My Calendars", footer = "A hidden calendar's events don't show anywhere on this phone: the calendar, widgets and alerts. It's hidden on the web too.") {
-                list.filter { it.kind != CalendarKind.HOLIDAYS }.forEach { c ->
+                list.filter { it.kind != CalendarKind.HOLIDAYS && it.kind != CalendarKind.CONNECTION }.forEach { c ->
                     CalendarRow(c, { scope.launch { calendars.setVisible(c, it) } }) { router.push(Route.EditCalendar(c.id)) }
                 }
                 ActionRow("Add Calendar", Icons.Filled.Add) { adding = true }
+            }
+            val synced = list.filter { it.kind == CalendarKind.CONNECTION }
+            if (synced.isNotEmpty()) FormSection("Synced Calendars", footer = "Events from your Google, Outlook and iCloud accounts, drawn in their calendar's colour. Tap one to change it.") {
+                synced.forEach { c ->
+                    CalendarRow(c, { scope.launch { calendars.setVisible(c, it) } }) { router.push(Route.EditCalendar(c.id)) }
+                }
             }
             FormSection("Holidays", footer = "Public holidays are worked out on this phone, so the countries you pick never leave Neutrino. Holiday rules from date-holidays (CC BY-SA 3.0).") {
                 list.filter { it.kind == CalendarKind.HOLIDAYS }.forEach { c ->

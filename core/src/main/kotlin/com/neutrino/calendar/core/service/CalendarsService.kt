@@ -34,8 +34,10 @@ class CalendarsService(private val api: CalendarApi, private val cacheFile: File
     val writable: List<UserCalendar> get() = CalendarRules.writable(_calendars.value)
     val defaultCalendar: UserCalendar? get() = _calendars.value.firstOrNull { it.isDefault } ?: writable.firstOrNull()
     val holidayCalendars: List<UserCalendar> get() = _calendars.value.filter { it.kind == CalendarKind.HOLIDAYS }
-    /** Everything but holidays, which Settings lists in a section of their own. */
-    val ownCalendars: List<UserCalendar> get() = _calendars.value.filter { it.kind != CalendarKind.HOLIDAYS }
+    /** The calendars a connected account's events sync into, one per provider. */
+    val syncedCalendars: List<UserCalendar> get() = _calendars.value.filter { it.kind == CalendarKind.CONNECTION }
+    /** Everything but holidays and synced calendars, which Settings lists in sections of their own. */
+    val ownCalendars: List<UserCalendar> get() = _calendars.value.filter { it.kind != CalendarKind.HOLIDAYS && it.kind != CalendarKind.CONNECTION }
 
     fun calendar(id: String?): UserCalendar? = id?.let { i -> _calendars.value.firstOrNull { it.id == i } }
 
