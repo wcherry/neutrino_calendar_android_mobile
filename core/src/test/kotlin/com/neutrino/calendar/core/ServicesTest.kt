@@ -166,6 +166,30 @@ class ServicesTest {
     }
 
     @Test
+    fun aServerErrorShowsAsAFailedSyncUntilTheNextReplay() = runBlocking {
+        server.putEvent("e1")
+        val events = events()
+        val sync = sync(events)
+        events.ensureLoaded(CalendarMode.MONTH)
+        val e1 = api.event("e1")
+        val draft = EventDraft.editing(e1, context)
+        server.offline = true
+        events.update(e1, draft, draft.copy(title = "Offline title"), overwrite = true)
+
+        server.offline = false
+        server.failWritesWith = 500
+        sync.catchUp()
+        assertEquals(1, sync.pending.writes.value.size)
+        assertEquals("Server error (500).", sync.pending.lastFailure.value)
+        assertFalse(sync.pending.isReplaying.value)
+
+        server.failWritesWith = null
+        sync.catchUp()
+        assertTrue(sync.pending.isEmpty)
+        assertNull(sync.pending.lastFailure.value)
+    }
+
+    @Test
     fun repeatingEventsEditOneOccurrenceOrSplit() = runBlocking {
         server.putEvent("series") { mapOf("recurrenceRule" to JsonPrimitive("FREQ=DAILY;COUNT=10")) }
         val events = events()
