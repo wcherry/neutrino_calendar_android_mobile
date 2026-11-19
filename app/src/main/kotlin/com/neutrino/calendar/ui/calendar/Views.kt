@@ -1,6 +1,9 @@
 package com.neutrino.calendar.ui.calendar
 
 import androidx.compose.foundation.background
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import com.neutrino.calendar.core.model.EventAvailability
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -121,7 +124,7 @@ fun MonthView(open: (EventOccurrence) -> Unit, refresh: () -> Unit) {
                     week.forEach { day ->
                         val inMonth = day.month == focus.month && day.year == focus.year
                         // Only this month is loaded, so its neighbours' days get no dots.
-                        val dots = if (inMonth) events.occurrencesOn(day).take(3).map { colorOf(it, rules, primary) } else emptyList()
+                        val dots = if (inMonth) events.occurrencesOn(day).take(3).map { colorOf(it, rules, primary) to it.availability } else emptyList()
                         DayCell(day, inMonth, day == today, day == focus, dots, compact, Modifier.weight(1f)) { events.select(day) }
                     }
                 }
@@ -145,7 +148,7 @@ fun MonthView(open: (EventOccurrence) -> Unit, refresh: () -> Unit) {
 }
 
 @Composable
-private fun DayCell(day: LocalDate, inMonth: Boolean, isToday: Boolean, isSelected: Boolean, dots: List<Color>, compact: Boolean, modifier: Modifier, onClick: () -> Unit) {
+private fun DayCell(day: LocalDate, inMonth: Boolean, isToday: Boolean, isSelected: Boolean, dots: List<Pair<Color, EventAvailability>>, compact: Boolean, modifier: Modifier, onClick: () -> Unit) {
     val primary = MaterialTheme.colorScheme.primary
     Column(modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = onClick), horizontalAlignment = Alignment.CenterHorizontally) {
         val size = if (compact) 28.dp else 32.dp
@@ -167,7 +170,7 @@ private fun DayCell(day: LocalDate, inMonth: Boolean, isToday: Boolean, isSelect
             )
         }
         Row(Modifier.height(6.dp).padding(top = 1.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-            dots.forEach { Box(Modifier.size(5.dp).clip(CircleShape).background(it)) }
+            dots.forEach { (color, availability) -> AvailabilityDot(availability, color) }
         }
     }
 }
@@ -267,7 +270,7 @@ private fun AllDayChip(o: EventOccurrence, color: Color, onClick: () -> Unit) {
     val graph = LocalContext.current.graph
     val scope = rememberCoroutineScope()
     val task = o.task?.let { graph.tasks.task(it.id) ?: it }
-    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(4.dp)).background(color.copy(alpha = 0.2f)).clickable(onClick = onClick).padding(horizontal = 3.dp, vertical = 2.dp),
+    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(4.dp)).availabilityFill(o.availability, color, tint = 0.2f).clickable(onClick = onClick).padding(horizontal = 3.dp, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically) {
         if (task != null) {
             Icon(if (task.done) Icons.Filled.CheckCircle else Icons.Filled.RadioButtonUnchecked, null, Modifier.size(12.dp).clickable { scope.launch { graph.tasks.setDone(task, !task.done) } },
@@ -306,7 +309,8 @@ private fun DayColumn(day: LocalDate, placed: List<TimeGridLayout.Placed>, hourH
             val task = o.task?.let { graph.tasks.task(it.id) ?: it }
             Row(
                 Modifier.offset(x = columnWidth * block.column + 1.dp, y = top).width(columnWidth - 2.dp).height(height)
-                    .clip(RoundedCornerShape(4.dp)).background(color.copy(alpha = 0.18f)).clickable { open(o) },
+                    .clip(RoundedCornerShape(4.dp)).availabilityFill(o.availability, color).clickable { open(o) }
+                    .semantics { if (o.availability != EventAvailability.BUSY) stateDescription = o.availability.label },
             ) {
                 Box(Modifier.width(3.dp).fillMaxSize().background(color)) {}
                 Column(Modifier.padding(horizontal = 3.dp, vertical = 2.dp)) {

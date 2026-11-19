@@ -1,5 +1,6 @@
 package com.neutrino.calendar.core.model
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.time.Instant
 
@@ -39,6 +40,8 @@ data class CalendarEvent(
     val cancelled: Boolean = false,
     /** The calendar it is in. Null from a server older than calendars. */
     val calendarId: String? = null,
+    /** How the event shows the user's time. Busy from a server older than availability. */
+    val availability: EventAvailability = EventAvailability.BUSY,
 ) {
     /** Whether this is a series: an event with a rule. An exception is never one. */
     val isRecurring: Boolean get() = !recurrenceRule.isNullOrEmpty()
@@ -68,7 +71,43 @@ data class CalendarEvent(
                 originalStart = ServerDate.parse(wire.originalStartTime),
                 cancelled = wire.cancelled ?: false,
                 calendarId = wire.calendarId,
+                availability = EventAvailability.of(wire.availability),
             )
+        }
+    }
+}
+
+/**
+ * How an event shows the user's time, as the server's `Availability` writes it
+ * (`neutrino/src/calendar/events/availability.rs`). Shaded on the calendar in the app's
+ * `AvailabilityFill`, the same four ways as the web and iOS.
+ */
+@Serializable
+enum class EventAvailability(val raw: String, val label: String) {
+    @SerialName("busy") BUSY("busy", "Busy"),
+    @SerialName("free") FREE("free", "Free"),
+    @SerialName("tentative") TENTATIVE("tentative", "Tentative"),
+    /** Out of office. */
+    @SerialName("away") AWAY("away", "Away");
+
+    companion object {
+        /** Absent, or a value this version doesn't know, reads as busy: the safe assumption about time. */
+        fun of(raw: String?): EventAvailability = entries.firstOrNull { it.raw == raw } ?: BUSY
+
+        /**
+         * From an `.ics` event's `TRANSP` and Outlook's `X-MICROSOFT-CDO-BUSYSTATUS`. `TRANSP` wins
+         * when they disagree: Apple Calendar edits only it and leaves the other behind. Must match
+         * `Availability::from_ical` on the server.
+         */
+        fun fromICal(transp: String?, busyStatus: String?): EventAvailability {
+            val t = transp?.trim()?.uppercase()
+            if (t == "TRANSPARENT") return FREE
+            return when (busyStatus?.trim()?.uppercase()) {
+                "TENTATIVE" -> TENTATIVE
+                "OOF" -> AWAY
+                "FREE" -> if (t == null) FREE else BUSY
+                else -> BUSY
+            }
         }
     }
 }
@@ -93,6 +132,7 @@ data class EventWire(
     val originalStartTime: String? = null,
     val cancelled: Boolean? = null,
     val calendarId: String? = null,
+    val availability: String? = null,
 )
 
 @Serializable
