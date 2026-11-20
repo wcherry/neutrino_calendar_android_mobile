@@ -1,5 +1,9 @@
 package com.neutrino.calendar.ui.event
 
+import com.neutrino.calendar.core.model.EventAvailability
+import com.neutrino.calendar.ui.calendar.availabilityFill
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -187,6 +191,11 @@ fun EventDetailScreen(occurrence: EventOccurrence, onBack: () -> Unit) {
                         }
                         Text(EventFormatting.dateSummary(occurrence))
                         Text(EventFormatting.timeSummary(occurrence), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        if (!event.source.isComputed) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Box(Modifier.size(18.dp, 11.dp).clip(RoundedCornerShape(3.dp))
+                                .availabilityFill(event.availability, hexColor(calendar?.color) ?: MaterialTheme.colorScheme.primary, corner = 3.dp, tint = 0.35f))
+                            Text("Show as ${event.availability.label}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
                         EventFormatting.originalTimeZoneSummary(occurrence)?.let {
                             Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
@@ -380,6 +389,10 @@ fun EventEditorScreen(mode: EventEditorMode, onBack: () -> Unit) {
                 DateTimeRow("Starts", draft.start, draft.timeZone, draft.allDay) { draft = draft.withStart(it) }
                 DateTimeRow("Ends", draft.end, draft.timeZone, draft.allDay, minimum = draft.day(draft.start)) { draft = draft.copy(end = it) }
                 if (!draft.allDay) ValueRow("Time Zone", zoneName(draft.timeZone), onClick = { pickingZone = true })
+            }
+
+            FormSection {
+                ChoiceRow("Show As", draft.availability, EventAvailability.entries, { it.label }, { draft = draft.copy(availability = it) })
             }
 
             if (scope == RecurrenceScope.THIS) {

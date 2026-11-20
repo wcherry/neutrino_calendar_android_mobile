@@ -1,5 +1,6 @@
 package com.neutrino.calendar.core.logic
 
+import com.neutrino.calendar.core.model.EventAvailability
 import com.neutrino.calendar.core.model.CalendarContext
 import com.neutrino.calendar.core.model.RepeatOption
 import java.time.Duration
@@ -60,6 +61,7 @@ object ICSImport {
             title = event["SUMMARY"]?.let { unescape(it.value) } ?: "",
             location = event["LOCATION"]?.let { unescape(it.value) } ?: "",
             notes = event["DESCRIPTION"]?.let { unescape(it.value) } ?: "",
+            availability = EventAvailability.fromICal(event["TRANSP"]?.value, event["X-MICROSOFT-CDO-BUSYSTATUS"]?.value),
             allDay = start.isDate,
             timeZone = zone,
             start = start.instant,

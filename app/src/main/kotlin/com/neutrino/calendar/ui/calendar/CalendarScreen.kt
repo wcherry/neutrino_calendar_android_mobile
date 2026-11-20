@@ -1,5 +1,6 @@
 package com.neutrino.calendar.ui.calendar
 
+import com.neutrino.calendar.core.model.EventAvailability
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -233,6 +234,13 @@ fun DayHeader(day: LocalDate, today: LocalDate) {
 }
 
 /** One occurrence in a list: a bar in its calendar's colour, or a checkbox for a task, then title, time and place. */
+/** An event's time, and how it shows the time when that isn't busy: "9:00 – 10:00 AM · Free". */
+fun timeAndAvailability(occurrence: EventOccurrence): String {
+    val time = EventFormatting.timeSummary(occurrence)
+    val availability = occurrence.availability
+    return if (availability == EventAvailability.BUSY) time else "$time · ${availability.label}"
+}
+
 @Composable
 fun EventRow(occurrence: EventOccurrence, onClick: () -> Unit) {
     val graph = LocalContext.current.graph
@@ -255,7 +263,10 @@ fun EventRow(occurrence: EventOccurrence, onClick: () -> Unit) {
                 modifier = Modifier.size(22.dp).clickable { scope.launch { graph.tasks.setDone(task, !task.done) } },
             )
         } else {
-            Box(Modifier.width(4.dp).size(4.dp, 40.dp).clip(RoundedCornerShape(2.dp)).background(colorOf(occurrence, rules, MaterialTheme.colorScheme.primary)))
+            // Solid, as before, for busy and away; striped or hollow when the time isn't taken.
+            val shown = occurrence.availability.takeIf { it != EventAvailability.AWAY } ?: EventAvailability.BUSY
+            Box(Modifier.width(4.dp).size(4.dp, 40.dp).clip(RoundedCornerShape(2.dp))
+                .availabilityFill(shown, colorOf(occurrence, rules, MaterialTheme.colorScheme.primary), corner = 2.dp, tint = 1f))
         }
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {
@@ -271,7 +282,7 @@ fun EventRow(occurrence: EventOccurrence, onClick: () -> Unit) {
                 occurrence.event.source.badge?.let { Badge(it) }
             }
             Text(
-                if (task == null) EventFormatting.timeSummary(occurrence) else if (occurrence.event.allDay) "Task due" else "Due ${EventFormatting.shortTime(occurrence.start)}",
+                if (task == null) timeAndAvailability(occurrence) else if (occurrence.event.allDay) "Task due" else "Due ${EventFormatting.shortTime(occurrence.start)}",
                 style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             occurrence.event.location?.takeIf { it.isNotEmpty() }?.let {

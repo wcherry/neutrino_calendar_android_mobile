@@ -2,6 +2,7 @@ package com.neutrino.calendar.core.logic
 
 import com.neutrino.calendar.core.model.CalendarContext
 import com.neutrino.calendar.core.model.CalendarEvent
+import com.neutrino.calendar.core.model.EventAvailability
 import com.neutrino.calendar.core.model.JsonBody
 import com.neutrino.calendar.core.model.RecurrenceScope
 import com.neutrino.calendar.core.model.RepeatOption
@@ -33,6 +34,8 @@ data class CreateEventRequest(
     val timezone: String? = null,
     /** Absent, the default calendar. */
     val calendarId: String? = null,
+    /** Absent, busy. */
+    val availability: EventAvailability? = null,
 ) : JsonBody {
     override fun toJson(): JsonObject = encodeObject(serializer(), this)
 }
@@ -56,6 +59,7 @@ data class UpdateEventRequest(
     val timezone: String? = null,
     /** Moves the event, a series with its exceptions. One occurrence can't move on its own. */
     val calendarId: String? = null,
+    val availability: EventAvailability? = null,
 ) : JsonBody {
     val isEmpty: Boolean get() = this == UpdateEventRequest()
     override fun toJson(): JsonObject = encodeObject(serializer(), this)
@@ -84,6 +88,7 @@ data class EventDraft(
     val attendees: List<String> = emptyList(),
     /** The calendar it goes in. Null for a new event means the default calendar. */
     val calendarId: String? = null,
+    val availability: EventAvailability = EventAvailability.BUSY,
 ) {
 
     // ── Repeat ──────────────────────────────────────────────────────────────────────────────────
@@ -166,6 +171,8 @@ data class EventDraft(
             attendees = attendees,
             timezone = wireTimeZone,
             calendarId = calendarId,
+            // Busy is the server's default, so it isn't sent.
+            availability = availability.takeIf { it != EventAvailability.BUSY },
         )
     }
 
@@ -183,6 +190,7 @@ data class EventDraft(
             recurrenceRule = (repeatOption.rule ?: "").takeIf { repeatOption != original.repeatOption },
             attendees = attendees.takeIf { it != original.attendees },
             calendarId = calendarId?.takeIf { it != original.calendarId },
+            availability = availability.takeIf { it != original.availability },
         )
     }
 
@@ -234,6 +242,7 @@ data class EventDraft(
                 repeatOption = RepeatOption.of(event.recurrenceRule),
                 attendees = event.attendees,
                 calendarId = event.calendarId,
+                availability = event.availability,
             )
         }
 
@@ -290,6 +299,7 @@ fun CalendarEvent.editedTo(draft: EventDraft): CalendarEvent {
         attendees = draft.attendees,
         timezone = draft.wireTimeZone,
         calendarId = draft.calendarId ?: calendarId,
+        availability = draft.availability,
         createdAt = null,
         updatedAt = null,
         recurringEventId = null,
